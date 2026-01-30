@@ -26,11 +26,12 @@ init_db()
 def add_expenses(date,amount,category,subcategory='',note=''):
     """Add a new expense to the database."""
     with sqlite3.connect(DB_PATH) as conn:
-        conn.execute(
+        cursor = conn.execute(
             "INSERT INTO expenses (date, amount, category, subcategory, note) VALUES (?, ?, ?, ?, ?)",
             (date, amount, category, subcategory, note)
         )
-    return {"status": "success", "id": conn.lastrowid} 
+        new_id = cursor.lastrowid
+    return {"status": "success", "id": new_id}
 
 @mcp.tool
 def list_Expenses():
@@ -40,16 +41,34 @@ def list_Expenses():
         cols = [description[0] for description in cursor.description]
         return [dict(zip(cols, row)) for row in cursor.fetchall()]
 
-# @mcp.tool
-# def roll_dice(n_dice : int = 1) -> list[int]:
-#     """Roll a specified number of six-sided dice and return the results."""
-#     return [random.randint(1, 6) for _ in range(n_dice)]
 
-# @mcp.tool
-# def add_two_num(a: int, b: int) -> int:
-#     """Add two numbers and return the result."""
-#     return a + b
 
+@mcp.tool
+def list_expense_in_range(start_date, end_date):
+    """List expenses within a specified date range."""
+    with sqlite3.connect(DB_PATH) as conn:
+        cursor = conn.execute(
+            "SELECT id, date, amount, category, subcategory, note FROM expenses WHERE date BETWEEN ? AND ? ORDER BY date ASC",
+            (start_date, end_date)
+        )
+        cols = [description[0] for description in cursor.description]
+        return [dict(zip(cols, row)) for row in cursor.fetchall()]
+    
+@mcp.tool
+def edit_expense(expense_id, date, amount, category, subcategory='', note=''):
+    """Edit an existing expense by its id."""
+    if expense_id is None:
+        return {"status": "error", "message": "expense_id is required"}
+
+    with sqlite3.connect(DB_PATH) as conn:
+        cursor = conn.execute(
+            "UPDATE expenses SET date = ?, amount = ?, category = ?, subcategory = ?, note = ? WHERE id = ?",
+            (date, amount, category, subcategory, note, expense_id)
+        )
+
+    if cursor.rowcount == 0:
+        return {"status": "not_found", "id": expense_id}
+    return {"status": "success", "id": expense_id}
 
 if __name__ == "__main__":
     mcp.run()
