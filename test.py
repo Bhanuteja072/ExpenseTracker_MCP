@@ -32,5 +32,13 @@ def add_expenses(date,amount,category,subcategory='',note=''):
         )
     return {"status": "success", "id": conn.lastrowid} 
 
+@mcp.tool
+def list_Expenses():
+    """List all expenses from the database."""
+    with sqlite3.connect(DB_PATH) as conn:
+        cursor = conn.execute("SELECT id, date, amount, category, subcategory, note FROM expenses ORDER BY id ASC")
+        cols = [description[0] for description in cursor.description]
+        return [dict(zip(cols, row)) for row in cursor.fetchall()]
+
 if __name__ == "__main__":
     mcp.run()
