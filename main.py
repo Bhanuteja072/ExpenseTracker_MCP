@@ -70,5 +70,22 @@ def edit_expense(expense_id, date, amount, category, subcategory='', note=''):
         return {"status": "not_found", "id": expense_id}
     return {"status": "success", "id": expense_id}
 
+@mcp.tool
+def delete_expense(expense_id):
+    """Delete an expense by its id."""
+    if expense_id is None:
+        return {"status": "error", "message": "expense_id is required"}
+
+    with sqlite3.connect(DB_PATH) as conn:
+        cursor = conn.execute(
+            "DELETE FROM expenses WHERE id = ?",
+            (expense_id,)
+        )
+
+    if cursor.rowcount == 0:
+        return {"status": "not_found", "id": expense_id}
+    return {"status": "success", "id": expense_id}
+
+
 if __name__ == "__main__":
     mcp.run()
